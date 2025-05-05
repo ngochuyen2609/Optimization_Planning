@@ -1,5 +1,11 @@
 import heapq
 
+def calc_path(path, passengers, places, capacity):
+    total_cost = 0
+    for i in range(len(path) - 1):
+        total_cost += capacity[path[i]][path[i + 1]]
+    return total_cost
+
 def greedy_route(passengers, places, capacity):
     n = 2 * passengers + 1
     visited = [False] * n
@@ -41,6 +47,7 @@ def greedy_route(passengers, places, capacity):
 
     path.append(0)
 
+    print(calc_path(path, passengers, places, capacity))
     print(passengers)
     print(" ".join(map(str, path[1:-1])))
 

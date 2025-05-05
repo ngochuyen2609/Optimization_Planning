@@ -26,11 +26,10 @@ Thuật toán 3: CP
 ![img_1.png](img_1.png)
 
 Thuật toán 4: heuristics (HillClimbing)
-Khởi tạo điểm bắt đầu từ một điểm xuất phát (là một giải pháp ban đầu)
+Khởi tạo điểm bắt đầu từ một điểm xuất phát (là một giải pháp ban đầu) sửa dụng greedy ở thuật toán 4
 Tìm kiếm lân cận xem liệu có giải pháp nào tốt hơn không.
 Lựa chọn giải pháp tốt nhất
-Lặp lại
-Điều kiện dừng
+Nếu vướng cực trị tối ưu thì RandomRestart
 ![img_3.png](img_3.png)
 
 Thuật toán 5: tham lam(greedy)
