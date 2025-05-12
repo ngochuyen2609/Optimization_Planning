@@ -1,6 +1,8 @@
 import heapq
 import random
 import time
+import statistics
+
 
 def check(path, passengers, places):
     n = len(path)
@@ -39,53 +41,60 @@ chiến lược khởi tạo:(tham lam)
     * là k khách gần nhất không phải khách gần nhất để tiện khởi tạo lại khi gặp cực trị địa phương
     * dùng greedy không phải random để đảm bảo lời giải khởi tạo đủ tốt(tránh mất thời gian)
 '''
-def init_solution(passengers, places, capacity):
-    n = passengers * 2 + 1
+def init_solution(passengers, places, capacity, k=3):
+    n = 2 * passengers + 1
     visited = [False] * n
+    onboard = set()
     path = [0]
+    current = 0
     remaining_pickups = set(range(1, passengers + 1))
     remaining_dropoffs = set(range(passengers + 1, n))
-    ticket = 0
-    curr = 0
-    curr_passenger = []
-    k = 3  # Số điểm ngẫu nhiên
 
     while remaining_pickups or remaining_dropoffs:
-        next_points = []
-        if ticket < places and remaining_pickups:
-            for p in remaining_pickups:
-                heapq.heappush(next_points, (capacity[curr][p], p))
-        else:
-            for p in curr_passenger:
-                if not visited[p + passengers]:
-                    heapq.heappush(next_points, (capacity[curr][p + passengers], p + passengers))
-        if not next_points:
-            return None
-
-        # Lấy top-k điểm có chi phí thấp nhất
         candidates = []
-        for _ in range(min(k, len(next_points))):
-            if next_points:
-                cost, point = heapq.heappop(next_points)
-                candidates.append((cost, point))
-            else:
-                break
-        if not candidates:
-            return None
 
-        # Chọn ngẫu nhiên một điểm từ top-k
-        _, next_point = random.choice(candidates)
+        if len(onboard) >= places or not remaining_pickups:
+            # Trả khách nếu xe đầy hoặc không còn khách để đón
+            for p in onboard:
+                drop = p + passengers
+                if not visited[drop]:
+                    candidates.append((capacity[current][drop], drop))
+
+        elif not onboard:
+            # Nếu xe rỗng → bắt buộc phải đón
+            for p in remaining_pickups:
+                if not visited[p]:
+                    candidates.append((capacity[current][p], p))
+
+        else:
+            # Nếu còn ghế và còn cả khách và người để trả → ưu tiên điểm gần nhất bất kể đón hay trả
+            for p in onboard:
+                drop = p + passengers
+                if not visited[drop]:
+                    candidates.append((capacity[current][drop], drop))
+            for p in remaining_pickups:
+                if not visited[p]:
+                    candidates.append((capacity[current][p], p))
+
+        if not candidates:
+            break
+
+        # Sắp xếp và lấy top-k điểm gần nhất
+        candidates.sort()
+        top_k = candidates[:k] if len(candidates) >= k else candidates
+        _, next_point = random.choice(top_k)
+
         path.append(next_point)
         visited[next_point] = True
-        curr = next_point
+
         if 1 <= next_point <= passengers:
-            curr_passenger.append(next_point)
+            onboard.add(next_point)
             remaining_pickups.remove(next_point)
-            ticket += 1
-        else:
-            curr_passenger.remove(next_point - passengers)
+        elif passengers + 1 <= next_point <= 2 * passengers:
+            onboard.remove(next_point - passengers)
             remaining_dropoffs.remove(next_point)
-            ticket -= 1
+
+        current = next_point
 
     path.append(0)
     if not check(path, passengers, places):
@@ -142,7 +151,7 @@ Chiến lược leo đồi:
         Nếu bị kẹt ở cực trị địa phương, tạo lại lộ trình mới 
 '''
 def hill_climbing_CBUS(passengers, places, capacity):
-    TIME_LIMIT = 119
+    TIME_LIMIT = 250
     start_time = time.time()
 
     best_path = None
@@ -214,9 +223,30 @@ def hill_climbing_CBUS(passengers, places, capacity):
         print(passengers)
         for i in range(1, len(best_path) - 1):
             print(f"{best_path[i]}", end=" ")
+            print()
 
+    duration = time.time() - start_time
+    return best_cost, best_path, duration
 
 if __name__ == '__main__':
     passengers, places = map(int, input().split())
     capacity = [list(map(int, input().split())) for _ in range(2 * passengers + 1)]
     hill_climbing_CBUS(passengers, places, capacity)
+
+    results = []
+    times = []
+
+    for _ in range(3):
+        cost, path, elapsed = hill_climbing_CBUS(passengers, places, capacity)
+        results.append(cost)
+        times.append(elapsed)
+
+    if all(cost == float('inf') for cost in results):
+        print(-1)
+    else:
+        valid_results = [c for c in results if c != float('inf')]
+        print(f"min: {min(valid_results)}")
+        print(f"max: {max(valid_results)}")
+        print(f"avg: {sum(valid_results) / len(valid_results):.2f}")
+        print(f"std: {statistics.stdev(valid_results):.2f}" if len(valid_results) > 1 else "std: N/A")
+        print(f"tavg: {sum(times) / len(times):.2f}s")
